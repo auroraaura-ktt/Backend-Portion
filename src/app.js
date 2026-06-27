@@ -9,7 +9,7 @@ const app = express()
 // ✅ CORS (safe for production - change Vercel URL later)
 app.use(
   cors({
-    origin: process.env.CLIENT_URL,
+    origin: "https://miitverse8.vercel.app",
     credentials: true
   })
 )
