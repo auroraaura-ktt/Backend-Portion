@@ -9,7 +9,7 @@ const app = express()
 // ✅ CORS (safe for production - change Vercel URL later)
 app.use(
   cors({
-    origin: process.env.CLIENT_URL || '*',
+    origin: process.env.CLIENT_URL,
     credentials: true
   })
 )
@@ -26,6 +26,16 @@ app.get('/', (req, res) => {
   res.json({
     message: 'MiitVerse API running',
     health: '/api/health'
+  })
+})
+
+// ✅ API base route
+app.get('/api', (req, res) => {
+  res.json({
+    message: 'MiitVerse API running',
+    health: '/api/health',
+    auth: '/api/auth',
+    users: '/api/users'
   })
 })
 
