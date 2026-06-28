@@ -9,8 +9,8 @@ const app = express()
 // ✅ CORS (safe for production - change Vercel URL later)
 app.use(
   cors({
-    origin: "https://miitverse8.vercel.app",
-    credentials: true
+    origin: ['https://miitverse8.vercel.app', 'http://localhost:5173', 'http://127.0.0.1:5173'],
+    credentials: true,
   })
 )
 

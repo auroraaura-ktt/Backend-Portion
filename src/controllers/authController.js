@@ -5,6 +5,11 @@ import { randomInt, randomUUID } from 'node:crypto'
 import { driver } from '../config/neo4j.js'
 import { env } from '../config/env.js'
 import { sendVerificationEmail } from '../utils/emailService.js'
+import {
+  buildVerificationErrorResponse,
+  buildVerificationPendingResponse,
+  buildVerificationResentResponse,
+} from '../utils/verificationResponses.js'
 
 const pendingRegistrations = new Map()
 const verificationTtlMs = 15 * 60 * 1000
@@ -132,19 +137,17 @@ export async function registerUser(req, res) {
       await sendVerificationEmail(normalizedEmail, pending.verificationCode)
       console.log(`Verification code sent to ${normalizedEmail}`)
 
-      return res.status(201).json({
-        message: 'Verification code sent. Please check your email and confirm within 15 minutes to create your account.',
-        email: normalizedEmail,
-      })
+      return res.status(201).json(
+        buildVerificationPendingResponse(normalizedEmail)
+      )
     } catch (emailError) {
       // Clean up pending registration if email fails
       pendingRegistrations.delete(normalizedEmail)
       console.error(`Failed to send verification email to ${normalizedEmail}:`, emailError.message)
 
-      return res.status(500).json({
-        message: 'Failed to send verification email. Please try again.',
-        error: emailError.message,
-      })
+      return res.status(500).json(
+        buildVerificationErrorResponse('Failed to send verification email. Please try again.', emailError.message)
+      )
     }
   } catch (error) {
     console.error('Registration error:', error)
@@ -189,10 +192,14 @@ export async function resendVerificationCode(req, res) {
     await sendVerificationEmail(normalizedEmail, verificationCode)
     console.log(`Verification code resent to ${normalizedEmail}`)
 
-    return res.status(200).json({ message: 'Verification code resent. Please check your email.' })
+    return res.status(200).json(
+      buildVerificationResentResponse(normalizedEmail)
+    )
   } catch (emailError) {
     console.error(`Failed to resend verification email to ${normalizedEmail}:`, emailError.message)
-    return res.status(500).json({ message: 'Failed to resend verification email. Please try again.' })
+    return res.status(500).json(
+      buildVerificationErrorResponse('Failed to resend verification email. Please try again.', emailError.message)
+    )
   }
 }
 

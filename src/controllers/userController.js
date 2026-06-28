@@ -54,6 +54,8 @@ export async function listUsers(req, res) {
       )
     )
 
+    const canViewSensitiveFields = req.user?.role === 'admin' || req.user?.role === 'moderator'
+
     return res.json({
       users: result.records.map((record) => {
         const user = getUserProperties(record.get('user'))
@@ -61,8 +63,7 @@ export async function listUsers(req, res) {
         return {
           id: user.id,
           username: user.username,
-          email: user.email,
-          role: user.role,
+          ...(canViewSensitiveFields ? { email: user.email, role: user.role } : {}),
           createdAt: user.createdAt,
         }
       }),
