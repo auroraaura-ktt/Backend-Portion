@@ -13,7 +13,6 @@ import {
 
 const pendingRegistrations = new Map()
 const verificationTtlMs = 15 * 60 * 1000
-const verificationResendCooldownMs = 3 * 60 * 1000
 
 function getUserProperties(node) {
   return node?.properties ?? node ?? {}
@@ -77,15 +76,6 @@ export async function registerUser(req, res) {
     }
 
     if (existingPending) {
-      const elapsedMs = Date.now() - (existingPending.lastSentAt || 0)
-
-      if (elapsedMs < verificationResendCooldownMs) {
-        const waitSeconds = Math.ceil((verificationResendCooldownMs - elapsedMs) / 1000)
-        return res.status(429).json({
-          message: `Verification already pending. Please wait ${waitSeconds} seconds before requesting a new code.`,
-        })
-      }
-
       if (
         trimmedUsername !== existingPending.username &&
         Array.from(pendingRegistrations.values()).some(
@@ -95,6 +85,7 @@ export async function registerUser(req, res) {
         return res.status(409).json({ message: 'Username already pending verification' })
       }
 
+      // Generate new verification code and resend email
       const passwordHash = await bcrypt.hash(password, 10)
       const verificationCode = randomInt(10000000, 100000000).toString()
       const verificationExpires = Date.now() + verificationTtlMs
@@ -176,13 +167,7 @@ export async function resendVerificationCode(req, res) {
     return res.status(400).json({ message: 'Verification code expired. Please register again.' })
   }
 
-  const elapsedMs = Date.now() - (pendingRegistration.lastSentAt || 0)
-
-  if (elapsedMs < verificationResendCooldownMs) {
-    const waitSeconds = Math.ceil((verificationResendCooldownMs - elapsedMs) / 1000)
-    return res.status(429).json({ message: `Please wait ${waitSeconds} seconds before requesting a new code.` })
-  }
-
+  // Always generate a new verification code
   const verificationCode = randomInt(10000000, 100000000).toString()
   pendingRegistration.verificationCode = verificationCode
   pendingRegistration.verificationExpires = Date.now() + verificationTtlMs
